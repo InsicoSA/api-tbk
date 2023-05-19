@@ -19,4 +19,6 @@ Route::post('/webpayplus/create', [WebpayPlusController::class, 'createTransacti
 
 Route::any('/webpayplus/returnUrl',  [WebpayPlusController::class, 'commitTransaction'])->name('returnUrl');
 
-Route::get('/webpayplus/comprobante', [WebpayPlusController::class, 'getTransactionStatus']);
+Route::get('/webpayplus/comprobante', [WebpayPlusController::class, 'getTransactionComprobante']);
+
+Route::get('/webpayplus/status', [WebpayPlusController::class, 'getTransactionStatus']);

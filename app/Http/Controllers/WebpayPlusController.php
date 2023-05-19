@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaccion;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+use stdClass;
 use Transbank\Webpay\Options;
 use Transbank\Webpay\WebpayPlus;
 use Transbank\Webpay\WebpayPlus\Transaction;
@@ -23,16 +24,16 @@ class WebpayPlusController extends Controller
     {
         try{
             $transaccion = new Transaccion();
-            $transaccion->buy_order = $request->buy_order;
+            $transaccion->buy_order = $request->buyOrder;
             $transaccion->sessionId = '';
             $transaccion->amount = $request->amount;
-            $transaccion->returnUrl = $request->return_url;
-            $transaccion->callbackUrl = $request->callback_url;
-            $transaccion->anularUrl = '';
+            $transaccion->callbackUrl = $request->callbackUrl;
+            $transaccion->anularUrl = $request->anularUrl;
+            $transaccion->returnUrl = '';
             $transaccion->token = '';
             $transaccion->save();
 
-            $tbk = $this->createdTransaction($request->buy_order, $request->amount);
+            $tbk = $this->createdTransaction($request->buyOrder, $request->amount);
             $url = $tbk->url.'?token_ws='.$tbk->token;
             return response()->json(['data' => $url], 200);
         } catch (\Exception $e){
@@ -68,12 +69,40 @@ class WebpayPlusController extends Controller
                 $transaccion->token = $token;
                 $transaccion->save();
 
-                $return_url = $transaccion->returnUrl . '?session_id=' . $session_id;
+                $return_url = $transaccion->callbackUrl . '?session_id=' . $session_id;
 
                 return redirect($return_url);
             }
             return response()->json(["resp" => $request->all()], 400);
         } catch(\Exception $e) {
+            return response()->json(['error' => $e], 400);
+        }
+    }
+
+    public function getTransactionComprobante(Request $request)
+    {
+        try {
+            $session_id = $request->input('session_id');
+            $transaccion = Transaccion::where('sessionId', $session_id)->first();
+            $token = $transaccion->token;
+            $tbk = (new Transaction)->status($token);
+            $card = new stdClass;
+            $card->card_number = $tbk->cardNumber;
+
+            $pago = new stdClass;
+            $pago->status = $tbk->status;
+            $pago->response_code = $tbk->responseCode;
+            $pago->amount = $tbk->amount;
+            $pago->authorization_code = $tbk->authorizationCode;
+            $pago->payment_type_code = $tbk->paymentTypeCode;
+            $pago->accounting_date = $tbk->accountingDate;
+            $pago->installments_number = $tbk->installmentsNumber;
+            $pago->session_id = $tbk->sessionId;
+            $pago->buy_order = $tbk->buyOrder;
+            $pago->card_detail = $card;
+            $pago->transaction_date = $tbk->transactionDate;
+            return response()->json(['token' => $token, 'session_id' => $transaccion->sessionId, 'comprobante' => $pago], 200);
+        } catch (\Exception $e){
             return response()->json(['error' => $e], 400);
         }
     }
