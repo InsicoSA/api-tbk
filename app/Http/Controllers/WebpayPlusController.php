@@ -24,7 +24,7 @@ class WebpayPlusController extends Controller
     {
         try{
             $transaccion = new Transaccion();
-            $transaccion->buy_order = $request->buyOrder;
+            $transaccion->buyOrder = $request->buyOrder;
             $transaccion->sessionId = '';
             $transaccion->amount = $request->amount;
             $transaccion->callbackUrl = $request->callbackUrl;
@@ -33,7 +33,7 @@ class WebpayPlusController extends Controller
             $transaccion->token = '';
             $transaccion->save();
 
-            $tbk = $this->createdTransaction($request->buyOrder, $request->amount);
+            $tbk = $this->createdTransaction($request->appId, $request->buyOrder, $request->amount);
             $url = $tbk->url.'?token_ws='.$tbk->token;
             return response()->json(['data' => $url], 200);
         } catch (\Exception $e){
@@ -46,9 +46,9 @@ class WebpayPlusController extends Controller
         dd(route('returnUrl'));
     }
 
-    public function createdTransaction($buy_order, $amount)
+    public function createdTransaction($app_id, $buy_order, $amount)
     {
-        $session_id = rand(1000000, 9999999);
+        $session_id = $app_id . '-' . date("Y-m-d\TH:i:s.v\Z");
         $transaction = (new Transaction)->create($buy_order, $session_id, $amount, route('returnUrl'));
         return $transaction;
     }
@@ -61,14 +61,12 @@ class WebpayPlusController extends Controller
                 $token = $req["token_ws"];
                 $tbk = (new Transaction)->commit($token);
     
-                $return_url = "";
-                $session_id = '99-' . $tbk->transactionDate;
-    
-                $transaccion = Transaccion::find($tbk->buyOrder);
-                $transaccion->sessionId = $session_id;
+                $transaccion = Transaccion::where('buyOrder', $tbk->buyOrder);
                 $transaccion->token = $token;
                 $transaccion->save();
 
+                $session_id = $transaccion->sessionId;
+                
                 $return_url = $transaccion->callbackUrl . '?session_id=' . $session_id;
 
                 return redirect($return_url);
@@ -101,7 +99,7 @@ class WebpayPlusController extends Controller
             $pago->buy_order = $tbk->buyOrder;
             $pago->card_detail = $card;
             $pago->transaction_date = $tbk->transactionDate;
-            return response()->json(['token' => $token, 'session_id' => $transaccion->sessionId, 'comprobante' => $pago], 200);
+            return response()->json(['token' => $token, 'session_id' => $session_id, 'comprobante' => $pago], 200);
         } catch (\Exception $e){
             return response()->json(['error' => $e], 400);
         }
@@ -112,7 +110,7 @@ class WebpayPlusController extends Controller
         try {
             $token = $request->input('token');
             $tbk = (new Transaction)->status($token);
-            $transaccion = Transaccion::find($tbk->buyOrder);
+            $transaccion = Transaccion::where('buyOrder', $tbk->buyOrder);
             return response()->json(['token' => $token, 'session_id' => $transaccion->sessionId, 'comprobante' => $tbk], 200);
         } catch (\Exception $e){
             return response()->json(['error' => $e], 400);

@@ -9,5 +9,5 @@ class Transaccion extends Model
 {
     use HasFactory;
     protected $table = 'transaccion';
-    protected $primaryKey = 'buy_order';
+    protected $primaryKey = 'id';
 }

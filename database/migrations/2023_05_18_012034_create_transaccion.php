@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('transaccion', function (Blueprint $table) {
-            $table->string('buy_order')->primary();
-            $table->string('sessionId');
+            $table->increments('id');
+            $table->string('buyOrder');
+            $table->string('sessionId')->unique();
             $table->integer('amount');
             $table->string('returnUrl');
             $table->string('callbackUrl');
