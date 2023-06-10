@@ -23,9 +23,10 @@ class WebpayPlusController extends Controller
     public function createTransaction(Request $request)
     {
         try{
+            $session_id = $request->appId . '-' . date("Y-m-d\TH:i:s.v\Z");
             $transaccion = new Transaccion();
             $transaccion->buyOrder = $request->buyOrder;
-            $transaccion->sessionId = '';
+            $transaccion->sessionId = $session_id;
             $transaccion->amount = $request->amount;
             $transaccion->callbackUrl = $request->callbackUrl;
             $transaccion->anularUrl = $request->anularUrl;
@@ -33,7 +34,7 @@ class WebpayPlusController extends Controller
             $transaccion->token = '';
             $transaccion->save();
 
-            $tbk = $this->createdTransaction($request->appId, $request->buyOrder, $request->amount);
+            $tbk = $this->createdTransaction($request->buyOrder, $request->amount, $session_id);
             $url = $tbk->url.'?token_ws='.$tbk->token;
             return response()->json(['data' => $url], 200);
         } catch (\Exception $e){
@@ -46,9 +47,8 @@ class WebpayPlusController extends Controller
         dd(route('returnUrl'));
     }
 
-    public function createdTransaction($app_id, $buy_order, $amount)
+    public function createdTransaction($buy_order, $amount, $session_id)
     {
-        $session_id = $app_id . '-' . date("Y-m-d\TH:i:s.v\Z");
         $transaction = (new Transaction)->create($buy_order, $session_id, $amount, route('returnUrl'));
         return $transaction;
     }
