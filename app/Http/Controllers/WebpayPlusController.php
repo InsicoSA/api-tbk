@@ -45,7 +45,7 @@ class WebpayPlusController extends Controller
 
     public function updateToken($buyOrder, $session_id, $token)
     {
-        $transaccion = Transaccion::where('buyOrder', $buyOrder)->where('sessionId', $session_id);
+        $transaccion = Transaccion::where('buyOrder', $buyOrder)->where('sessionId', $session_id)->first();
         $transaccion->token = $token;
         $transaccion->save();
     }
