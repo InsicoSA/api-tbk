@@ -69,7 +69,7 @@ class WebpayPlusController extends Controller
                 $token = $req["token_ws"];
                 $tbk = (new Transaction)->commit($token);
     
-                $transaccion = Transaccion::where('token', $token);
+                $transaccion = Transaccion::where('buyOrder', $tbk->buyOrder)->where('sessionId', $tbk->sessionId)->first();
                 
                 $return_url = $transaccion->callbackUrl . '?session_id=' . $transaccion->sessionId;
 
